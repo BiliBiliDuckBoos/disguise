@@ -1,0 +1,153 @@
+<template>
+  <div class="main-page" onlongpress="enterCalibration">
+    <div class="info-box">
+      <text class="time-text">{{ timeStr }}</text>
+      <text class="date-text">{{ dateStr }}</text>
+      <text class="week-text">{{ weekStr }}</text>
+      <text class="battery-text">{{ batteryStr }}</text>
+    </div>
+    <text class="hint-text">长按屏幕进入时间校准</text>
+  </div>
+</template>
+
+<script>
+import router from '@system.router'
+import battery from '@system.battery'
+
+const WEEKDAYS = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六']
+
+function pad(n) {
+  return n < 10 ? '0' + n : '' + n
+}
+
+export default {
+  private: {
+    timeStr: '',
+    dateStr: '',
+    weekStr: '',
+    batteryStr: '',
+    timer: null,
+    batteryTimer: null
+  },
+
+  onInit() {
+    this.updateTime()
+    this.updateBattery()
+  },
+
+  onShow() {
+    this.startTimers()
+  },
+
+  onHide() {
+    this.stopTimers()
+  },
+
+  onDestroy() {
+    this.stopTimers()
+  },
+
+  startTimers() {
+    this.stopTimers()
+    this.timer = setInterval(() => {
+      this.updateTime()
+    }, 1000)
+    this.batteryTimer = setInterval(() => {
+      this.updateBattery()
+    }, 60000)
+  },
+
+  stopTimers() {
+    if (this.timer) {
+      clearInterval(this.timer)
+      this.timer = null
+    }
+    if (this.batteryTimer) {
+      clearInterval(this.batteryTimer)
+      this.batteryTimer = null
+    }
+  },
+
+  updateTime() {
+    const now = new Date()
+    this.timeStr = pad(now.getHours()) + ':' + pad(now.getMinutes())
+    this.dateStr = now.getFullYear() + '年' + (now.getMonth() + 1) + '月' + now.getDate() + '日'
+    this.weekStr = WEEKDAYS[now.getDay()]
+  },
+
+  updateBattery() {
+    const that = this
+    battery.getStatus({
+      success: function (data) {
+        const level = data.level != null ? Math.round(data.level * 100) : 0
+        that.batteryStr = '电量 ' + level + '%'
+      },
+      fail: function () {
+        that.batteryStr = '电量 --'
+      }
+    })
+  },
+
+  enterCalibration() {
+    router.push({
+      uri: '/pages/calibration'
+    })
+  },
+
+  onBackPress() {
+    return true
+  }
+}
+</script>
+
+<style>
+.main-page {
+  width: 100%;
+  height: 100%;
+  background-color: #000000;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.info-box {
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.time-text {
+  font-size: 48px;
+  color: #ffffff;
+  text-align: center;
+}
+
+.date-text {
+  margin-top: 12px;
+  font-size: 20px;
+  color: #ffffff;
+  text-align: center;
+}
+
+.week-text {
+  margin-top: 8px;
+  font-size: 18px;
+  color: #ffffff;
+  text-align: center;
+}
+
+.battery-text {
+  margin-top: 8px;
+  font-size: 16px;
+  color: #ffffff;
+  text-align: center;
+}
+
+.hint-text {
+  position: absolute;
+  bottom: 16px;
+  font-size: 12px;
+  color: #666666;
+  text-align: center;
+}
+</style>
